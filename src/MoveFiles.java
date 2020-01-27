@@ -1,8 +1,5 @@
 import java.io.IOException;
-import java.nio.file.FileVisitResult;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.SimpleFileVisitor;
+import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 
 public class MoveFiles extends SimpleFileVisitor<Path> {
@@ -19,6 +16,10 @@ public class MoveFiles extends SimpleFileVisitor<Path> {
     public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
 
         Path relativizedPath = sourceRoot.relativize(dir);
+        if(!hasFlagFile(dir)){
+            System.out.println("No flag file present. Skipping directory");
+            return FileVisitResult.SKIP_SUBTREE;
+        }
         System.out.println("RelativizedPath = " + relativizedPath);
         Path moveDir = targetRoot.resolve(relativizedPath);
         System.out.println("Resolved path for move = " + moveDir);
@@ -42,6 +43,7 @@ public class MoveFiles extends SimpleFileVisitor<Path> {
     @Override
     public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
         Path relativizedPath = sourceRoot.relativize(file);
+
         Path moveDir = targetRoot.resolve(relativizedPath);
         System.out.println("Resolved path for copy = " + moveDir);
 
@@ -52,5 +54,19 @@ public class MoveFiles extends SimpleFileVisitor<Path> {
         }
 
         return FileVisitResult.CONTINUE;
+    }
+
+    private boolean hasFlagFile(Path dir) {
+
+        try (DirectoryStream<Path> contents = Files.newDirectoryStream(dir, "*.flag")) {
+            for (Path file : contents) {
+                System.out.println(file.getFileName());
+                return true;
+            }
+            return false;
+        } catch (IOException e) {
+            System.out.println(e.getMessage());
+            return false;
+        }
     }
 }
